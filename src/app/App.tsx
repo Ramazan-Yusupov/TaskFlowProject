@@ -3,6 +3,7 @@ import { ArrowUpRight, CircleCheckBig, Clock3, ListTodo } from "lucide-react";
 import { initialTickets, type CreateTicketInput, type Ticket, type TicketStatus } from "@/entities/ticket";
 import { createTicket, changeTicketStatus } from "@/shared/api/tickets";
 import { CreateTicketModal } from "@/features/create-ticket";
+import { useTheme } from "@/features/toggle-theme";
 import { TicketFilters } from "@/features/ticket-filters";
 import { DashboardHeader } from "@/widgets/dashboard-header";
 import { SideNavigation } from "@/widgets/side-navigation";
@@ -35,6 +36,7 @@ export function App() {
   const [status, setStatus] = useState<TicketStatus | "all">("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const visibleTickets = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
@@ -65,12 +67,17 @@ export function App() {
     <div className="app-shell" id="workspace">
       <SideNavigation isOpen={isNavigationOpen} onClose={() => setIsNavigationOpen(false)} taskCount={tickets.length} />
       <main className="main-content">
-        <DashboardHeader onCreateTicket={() => setIsCreateModalOpen(true)} onOpenNavigation={() => setIsNavigationOpen(true)} />
+        <DashboardHeader
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onCreateTicket={() => setIsCreateModalOpen(true)}
+          onOpenNavigation={() => setIsNavigationOpen(true)}
+        />
         <div className="content-wrap">
           <section className="hero-panel">
             <div>
               <p className="eyebrow">Понедельник, 6 июля</p>
-              <h1>Доброе утро, Рамазан <span>✦</span></h1>
+              <h1>Доброе утро, Рамазан</h1>
               <p className="hero-panel__description">Сфокусируйтесь на важном: команда уже продвигает ключевые задачи этой недели.</p>
             </div>
             <a href="#summary" className="text-link">Открыть сводку <ArrowUpRight size={17} aria-hidden="true" /></a>
