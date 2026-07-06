@@ -1,41 +1,22 @@
 import { useMemo, useState } from "react";
 import { ArrowUpRight, CircleCheckBig, Clock3, ListTodo } from "lucide-react";
-import { initialTickets, type CreateTicketInput, type Ticket, type TicketStatus } from "@/entities/ticket";
-import { createTicket, changeTicketStatus } from "@/shared/api/tickets";
+import type { Ticket, TicketStatus } from "@/entities/ticket";
 import { CreateTicketModal } from "@/features/create-ticket";
+import { TicketDetailsModal } from "@/features/ticket-details";
+import { useTicketWorkspace } from "@/features/manage-tickets";
 import { useTheme } from "@/features/toggle-theme";
 import { TicketFilters } from "@/features/ticket-filters";
 import { DashboardHeader } from "@/widgets/dashboard-header";
 import { SideNavigation } from "@/widgets/side-navigation";
 import { TicketBoard } from "@/widgets/ticket-board";
 
-function buildLocalTicket(input: CreateTicketInput, order: number): Ticket {
-  const normalizedName = input.assigneeName.trim();
-  const initials = normalizedName
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("") || "НЗ";
-
-  return {
-    id: `TSK-${490 + order}`,
-    title: input.title,
-    project: input.project,
-    priority: input.priority,
-    status: "backlog",
-    labels: ["Новая"],
-    assignee: { name: normalizedName, initials },
-    dueAt: input.dueAt,
-    comments: 0,
-  };
-}
-
 export function App() {
-  const [tickets, setTickets] = useState<Ticket[]>(initialTickets);
+  const { tickets, createTicket, updateTicket, changeTicketStatus, deleteTicket } = useTicketWorkspace();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<TicketStatus | "all">("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const { theme, toggleTheme } = useTheme();
 
   const visibleTickets = useMemo(() => {
@@ -50,18 +31,6 @@ export function App() {
 
   const completedCount = tickets.filter((ticket) => ticket.status === "done").length;
   const activeCount = tickets.filter((ticket) => ticket.status === "in_progress").length;
-
-  const handleCreateTicket = async (input: CreateTicketInput) => {
-    const createdRemotely = await createTicket(input);
-    setTickets((current) => [createdRemotely ?? buildLocalTicket(input, current.length), ...current]);
-  };
-
-  const handleStatusChange = async (ticketId: string, nextStatus: TicketStatus) => {
-    const updatedRemotely = await changeTicketStatus(ticketId, nextStatus);
-    setTickets((current) => current.map((ticket) => (
-      ticket.id === ticketId ? (updatedRemotely ?? { ...ticket, status: nextStatus }) : ticket
-    )));
-  };
 
   return (
     <div className="app-shell" id="workspace">
@@ -95,11 +64,12 @@ export function App() {
               <p>Кликайте на статус слева, чтобы передвигать задачу по потоку.</p>
             </div>
             <TicketFilters query={query} status={status} onQueryChange={setQuery} onStatusChange={setStatus} />
-            <TicketBoard tickets={visibleTickets} onStatusChange={handleStatusChange} />
+            <TicketBoard tickets={visibleTickets} onStatusChange={async (ticketId, nextStatus) => { await changeTicketStatus(ticketId, nextStatus); }} onOpenTicket={setSelectedTicket} />
           </section>
         </div>
       </main>
-      <CreateTicketModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onCreate={handleCreateTicket} />
+      <CreateTicketModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onCreate={async (input) => { await createTicket(input); }} />
+      <TicketDetailsModal key={selectedTicket?.id ?? "closed"} ticket={selectedTicket} onClose={() => setSelectedTicket(null)} onUpdate={async (ticketId, input) => { await updateTicket(ticketId, input); }} onDelete={deleteTicket} />
     </div>
   );
 }

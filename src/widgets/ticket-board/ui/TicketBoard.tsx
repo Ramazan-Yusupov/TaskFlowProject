@@ -8,6 +8,7 @@ import { cn } from "@/shared/lib/cn";
 type TicketBoardProps = {
   tickets: Ticket[];
   onStatusChange: (ticketId: string, status: TicketStatus) => Promise<void>;
+  onOpenTicket: (ticket: Ticket) => void;
 };
 
 const nextStatus: Record<TicketStatus, TicketStatus> = {
@@ -23,7 +24,7 @@ function TaskIcon({ status }: { status: TicketStatus }) {
   return <CircleDotDashed size={20} aria-hidden="true" />;
 }
 
-export function TicketBoard({ tickets, onStatusChange }: TicketBoardProps) {
+export function TicketBoard({ tickets, onStatusChange, onOpenTicket }: TicketBoardProps) {
   if (!tickets.length) {
     return (
       <section className="empty-state">
@@ -65,14 +66,14 @@ export function TicketBoard({ tickets, onStatusChange }: TicketBoardProps) {
               <div className="ticket-assignee"><span className="avatar">{ticket.assignee.initials}</span><span>{ticket.assignee.name}</span></div>
               <div className="ticket-due"><span>{formatShortDate(ticket.dueAt)}</span><small><MessageCircle size={14} aria-hidden="true" />{ticket.comments}</small></div>
               <div className="ticket-actions">
-                <IconButton label={`Открыть ${ticket.id}`} className="row-action"><ArrowUpRight size={18} aria-hidden="true" /></IconButton>
-                <IconButton label={`Меню ${ticket.id}`} className="row-action"><MoreHorizontal size={19} aria-hidden="true" /></IconButton>
+                <IconButton label={`Открыть ${ticket.id}`} className="row-action" onClick={() => onOpenTicket(ticket)}><ArrowUpRight size={18} aria-hidden="true" /></IconButton>
+                <IconButton label={`Действия для ${ticket.id}`} className="row-action" onClick={() => onOpenTicket(ticket)}><MoreHorizontal size={19} aria-hidden="true" /></IconButton>
               </div>
             </li>
           );
         })}
       </ul>
-      <button className="load-more" type="button">Показать ещё <ChevronRight size={17} aria-hidden="true" /></button>
+      <button className="load-more" type="button" onClick={() => window.scrollBy({ top: 360, behavior: "smooth" })}>Показать ещё <ChevronRight size={17} aria-hidden="true" /></button>
     </section>
   );
 }

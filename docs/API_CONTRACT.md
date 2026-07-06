@@ -2,6 +2,8 @@
 
 Frontend работает автономно в режиме `VITE_API_MODE=demo`. Для интеграции установите `VITE_API_MODE=remote`, запустите backend на `http://localhost:4000` и Vite proxy направит `/api` на него.
 
+Backend хранит рабочие данные в `backend/.data/tickets.json`. Этот файл создаётся автоматически при первом запуске и не попадает в Git.
+
 ## Endpoints
 
 ### `GET /health`
@@ -10,7 +12,7 @@ Frontend работает автономно в режиме `VITE_API_MODE=demo
 
 ### `GET /api/tickets?status=&query=`
 
-Возвращает массив задач. `status` — один из `backlog`, `in_progress`, `review`, `done`. `query` ищет по id и заголовку.
+Возвращает массив задач. `status` — один из `backlog`, `in_progress`, `review`, `done`. `query` ищет по id, заголовку, проекту и исполнителю.
 
 ### `POST /api/tickets`
 
@@ -24,7 +26,25 @@ Frontend работает автономно в режиме `VITE_API_MODE=demo
 }
 ```
 
-Ответ `201` — созданная задача. При ошибке валидации — `400`:
+Ответ `201` — созданная задача.
+
+### `PATCH /api/tickets/:ticketId`
+
+Принимает те же редактируемые поля, что и создание. Ответ `200` — обновлённая задача.
+
+### `PATCH /api/tickets/:ticketId/status`
+
+```json
+{ "status": "review" }
+```
+
+Ответ `200` — обновлённая задача. Допустим только следующий статус потока: `backlog → in_progress → review → done`. Некорректный переход возвращает `409` с `code: "INVALID_STATUS_TRANSITION"`.
+
+### `DELETE /api/tickets/:ticketId`
+
+Удаляет задачу. Ответ `204` без тела.
+
+## Ошибки
 
 ```json
 {
@@ -35,12 +55,4 @@ Frontend работает автономно в режиме `VITE_API_MODE=demo
 }
 ```
 
-### `PATCH /api/tickets/:ticketId/status`
-
-```json
-{ "status": "review" }
-```
-
-Ответ `200` — обновлённая задача. Неизвестная задача — `404`, недопустимый status — `400`.
-
-> MVP использует in-memory adapter. В production его заменяет Postgres adapter, реализующий тот же `TicketRepository` port.
+Тело запроса ограничено 100 KB. Превышение возвращает `413` и `PAYLOAD_TOO_LARGE`.

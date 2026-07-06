@@ -16,12 +16,23 @@ export type Ticket = {
   comments: number;
 };
 
+const nextStatus: Record<TicketStatus, TicketStatus | null> = {
+  backlog: "in_progress",
+  in_progress: "review",
+  review: "done",
+  done: null,
+};
+
 export function isTicketStatus(value: string): value is TicketStatus {
   return ticketStatuses.includes(value as TicketStatus);
 }
 
 export function isTicketPriority(value: string): value is TicketPriority {
   return ticketPriorities.includes(value as TicketPriority);
+}
+
+export function canChangeTicketStatus(currentStatus: TicketStatus, targetStatus: TicketStatus): boolean {
+  return nextStatus[currentStatus] === targetStatus;
 }
 
 export function getInitials(name: string): string {
